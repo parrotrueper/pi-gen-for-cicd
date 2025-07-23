@@ -8,7 +8,7 @@ jobs:
       - checkout
       - run:
           name: "Build pi-gen OS"
-          command: ./build.sh -p -f ./my-config
+          command: ./ci/test
       - store_artifacts:
           path: ./deploy
 
