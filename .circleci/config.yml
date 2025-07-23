@@ -1,0 +1,18 @@
+version: 2.1
+
+jobs:
+  build-the-rpi-OS:
+    machine: true
+    resource_class: wile-e-coyote-limited/road-runner
+    steps:
+      - checkout
+      - run:
+          name: "Build pi-gen OS"
+          command: ./build.sh -p -f ./my-config
+      - store_artifacts:
+          path: ./deploy
+
+workflows:
+  rpi-workflow:
+    jobs:
+      - build-the-rpi-OS

@@ -1,0 +1,12 @@
+# can only be used with a self-hosted runner due to privileged mode
+pipelines:
+  default:
+    - step:
+        name: Test runner
+        runs-on:
+          - linux.shell
+        script:
+          - export DOCKER_HOST=""
+          - ./ci/test
+        artifacts:
+          - ./deploy

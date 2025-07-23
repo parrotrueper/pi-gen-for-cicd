@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Exit on error
+set -e
+set -u
+set -o pipefail
+
+# Invoke as "ci/clean"
+#---------------------
+
+# shellcheck source=/dev/null
+. ci/functions.sh
+
+rmContainer() {
+  container_name=$1
+
+  container_id=$(docker ps --filter ancestor="${container_name}" -q)
+  if [[ -n ${container_id} ]]; then
+    docker container kill "${container_id}"
+    docker rm -v "${container_name}"
+  fi
+
+}
+
+is_pipeline=$(is_ci)
+
+# clean build is only relevant for local builds
+if [[ "${is_pipeline}" = "no" ]]; then
+  info "cleaning up artefacts created by local builds"
+  # configuration file
+  cfg_file="build-config.json"
+  dir_name="$(jq -r '.git.name' "$cfg_file")"
+
+  info "Remove the pig-gen dir"
+  run rm -rf "$dir_name"
+
+  # nuke the docker container if it exists from a previous run
+  # note that this is a different container from the one created by ci
+  # builds
+  rmContainer "pigen_work"
+  run rm -rf deploy
+  run rm -rf auto-gen-config
+  run rm -rf entrycmd.sh
+  run rm -rf .env
+fi

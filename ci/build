@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# Exit on error
+set -e
+set -u
+set -o pipefail
+
+# Error handling
+trap 'printf "\n\nERROR at $0 line $LINENO. Exiting.\n\n"' ERR
+
+# shellcheck source=/dev/null
+. ci/functions.sh
+
+# configuration file
+cfg_file="build-config.json"
+
+
+# build a docker image to use as the builder, only required for cicd
+#-------------------------------------------------------------------
+buildDockerImage() {
+
+  # shellcheck source=/dev/null
+  . .env
+
+  bld_cmd="DOCKER_BUILDKIT=1 docker build"
+  bld_cmd+=" --build-arg BASE_IMAGE=$DKR_BASE_IMG"
+  # comment out to speed up
+  #bld_cmd+=" --no-cache"
+  # uncomment to debug
+  #bld_cmd+=" --progress=plain"
+  bld_cmd+=" --platform $DKR_PLATFORM"
+  bld_cmd+=" -t $DKR_IMAGE_NAME $DKR_BLD_CONTEXT"
+  info "${bld_cmd}"
+  run eval "${bld_cmd}"
+}
+
+is_file_exe(){
+  if [[ -x $1 ]]; then
+    info "$1 is executable"
+  else
+    err "$1 is not executable"
+    exit 1
+  fi
+}
+# when running on a cicd pipeline we need to build a bit different, we need to
+# check the architecture of the runner
+#-------------------------------------------------------------------------------
+buildCiCd() {
+
+  # shellcheck source=/dev/null
+  . .env
+
+  info "Running container for ci build"
+
+  repo_dir="$(jq -r '.git.name' "$cfg_file")"
+  # spin up a container of the builder docker image
+  pushd "${repo_dir}"
+   run ls -la > test-log
+   run grep -e config -e entrycmd.sh -e cicd-build.sh test-log
+   run is_file_exe entrycmd.sh
+   run is_file_exe cicd-build.sh
+   run rm test-log
+
+   run_cmd="time docker run"
+   run_cmd+=" --rm"
+   run_cmd+=" --privileged"
+   run_cmd+=" --volume $(pwd):/tmp/workspace"
+   run_cmd+=" --env GIT_HASH=${ENV_GIT_HASH}"
+   run_cmd+=" --env HOST_UID=${ENV_USER_ID}"
+   run_cmd+=" --env HOST_GID=${ENV_USER_GID}"
+   run_cmd+=" ${DKR_IMAGE_NAME}:latest"
+   run_cmd+=" bash -c ./entrycmd.sh"
+
+   info "${run_cmd[@]}"
+   eval "${run_cmd}" &
+   wait "$!"
+  popd
+
+  run cp -r "${repo_dir}/deploy" ./
+  run ls -lah deploy
+
+  # test that the runner can actually remove it
+  run rm -rf "${repo_dir}/deploy"
+  run rm -rf "${repo_dir}/work"
+
+  echo "Done! Your image(s) should be in deploy/"
+}
+
+buildLocal() {
+
+  repo_dir="$(jq -r '.git.name' "$cfg_file")"
+  run pushd "${repo_dir}"
+  info "Local build"
+  PRESERVE_CONTAINER=1 CONTINUE=1 CLEAN=1 ./build-docker.sh
+  run popd
+}
+
+buildPiOsImage() {
+
+  is_pipeline=$(is_ci)
+  if [[ ${is_pipeline} = "yes" ]]; then
+    buildCiCd
+  else
+    buildLocal
+  fi
+}
+
+# script starts here
+#===================
+main() {
+  scripts/setup.sh
+  buildDockerImage
+  buildPiOsImage
+}
+
+main
