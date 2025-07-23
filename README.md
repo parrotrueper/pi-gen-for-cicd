@@ -4,14 +4,14 @@ Build pi-gen ARM64 branch on a cicd runner, for example on Bitbucket or CircleCi
 
 ## Requirements
 
-### On local machines
+### On a local host
 
 * Docker Engine
 * qemu
 * Enable multiplatform builds
 * CLI JSON processor
 
-    `./env-setup`
+    `./scripts/host-setup`
 
 ### CICD runners
 
