@@ -8,9 +8,16 @@ jobs:
       - checkout
       - run:
           name: "Build pi-gen OS"
-          command: ./ci/test
+          command: |
+            export DOCKER_HOST=""
+            ./ci/test
+            tar -zcvf deploy.tar.gz deploy
+            touch deploy.tar.gz
+            chmod 644 deploy.tar.gz
+            ls -lah
+
       - store_artifacts:
-          path: ./deploy
+          path: ./deploy.tar.gz
 
 workflows:
   rpi-workflow:

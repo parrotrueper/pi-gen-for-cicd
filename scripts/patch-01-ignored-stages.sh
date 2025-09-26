@@ -13,6 +13,7 @@ trap 'printf "\n\nERROR at $0 line $LINENO. Exiting.\n\n"' ERR
 # configuration file
 cfg_file="build-config.json"
 
+
   stages="$(jq -r '.build.stages' "$cfg_file")"
   case ${stages} in
     5);&
@@ -37,4 +38,5 @@ cfg_file="build-config.json"
   if [[ ${stages} -le 2 ]]; then
       touch "$repo_dir/stage3/SKIP"
   fi
+
 

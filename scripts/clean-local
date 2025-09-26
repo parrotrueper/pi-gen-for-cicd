@@ -16,9 +16,8 @@ rmContainer() {
   container_id=$(docker ps --filter ancestor="${container_name}" -q)
   if [[ -n ${container_id} ]]; then
     docker container kill "${container_id}"
-    docker rm -v "${container_name}"
   fi
-
+  docker rm -v "${container_name}"
 }
 
 is_pipeline=$(is_ci)

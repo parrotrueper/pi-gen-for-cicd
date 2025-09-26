@@ -21,8 +21,16 @@ fi
 
 info "Setup the build environment"
 
+# create .env file for docker
 run scripts/create-docker-assets.sh
+# config file to use with pi-gen
 run scripts/create-config-file.sh
+# pi-gen github sources
 run scripts/get-sources.sh
-run scripts/set-stages.sh
+# check that pi-gen has not changed dependencies
+run scripts/compare-docker-packages.sh
+# check that the debian base image has not changed
+run scripts/check-docker-base-match.sh
+# patch the sources with our changes
+run scripts/update-sources.sh
 

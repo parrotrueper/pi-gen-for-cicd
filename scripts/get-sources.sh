@@ -14,48 +14,25 @@ trap 'printf "\n\nERROR at $0 line $LINENO. Exiting.\n\n"' ERR
 cfg_file="build-config.json"
 
 repo_dir="$(jq -r '.git.name' "$cfg_file")"
-url="$(jq -r '.git.url' "$cfg_file")"
-branch="$(jq -r '.git.branch' "$cfg_file")"
+repo_url="$(jq -r '.git.url' "$cfg_file")"
+repo_branch="$(jq -r '.git.branch' "$cfg_file")"
+git_hash=''
 
-if [[ ! -d $repo_dir ]]; then
-    info "cloning $repo_dir repo"
-    run git clone --branch "$branch" "$url"
-else
-    info "getting latest version of the repo"
-    run pushd "$repo_dir"
-      run git reset --hard HEAD
-      run git pull
-      run git checkout arm64
-    run popd
-fi
+# if the repo exists then nuke it and get a fresh clone
 if [ -d "$repo_dir" ]; then
-    run pushd "$repo_dir"
-        git_hash="$(git rev-parse HEAD)"
-    run popd
-else
-    err "$repo_dir does not exist"
-    exit 1
+    rm -rf "$repo_dir"
 fi
+
+info "cloning $repo_dir repo"
+run git clone --branch "$repo_branch" "$repo_url"
+run pushd "$repo_dir"
+    git_hash="$(git rev-parse HEAD)"
+run popd
 
 # location for .env file
 env_file=".env"
-
 {
   printf "ENV_GIT_HASH=%s\n" "$git_hash"
 }>>"${env_file}"
 
-# remove the stock config file so we can replace it with our own version
-config_filename="$(jq -r '.build.filename' "$cfg_file")"
-info "removing stock config file"
-run rm -rf "$repo_dir/config"
-info "replacing with auto generated config file"
-run cp "$config_filename" "$repo_dir/config"
-
-info "patch in build script for a ci build"
-run cp scripts/cicd-build.sh "$repo_dir/"
-run chmod +x "$repo_dir/cicd-build.sh"
-
-info "add in ci container command script"
-run mv entrycmd.sh "$repo_dir/"
-run chmod +x "$repo_dir/entrycmd.sh"
 

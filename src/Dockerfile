@@ -14,6 +14,7 @@ RUN apt-get -y update \
     curl \
     debootstrap \
     dosfstools \
+    e2fsprogs \
     file \
     fdisk \
     git \
@@ -28,6 +29,7 @@ RUN apt-get -y update \
     qemu-user-static \
     rsync \
     udev \
+    vim \
     xz-utils \
     xxd \
     zerofree \

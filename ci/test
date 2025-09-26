@@ -12,4 +12,8 @@ set -o pipefail
 . ci/functions.sh
 
 info "Build"
-ci/build
+./build
+
+# generate change log and commit
+run ci/gen-changelog
+

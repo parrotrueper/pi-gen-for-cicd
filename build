@@ -13,7 +13,6 @@ trap 'printf "\n\nERROR at $0 line $LINENO. Exiting.\n\n"' ERR
 # configuration file
 cfg_file="build-config.json"
 
-
 # build a docker image to use as the builder, only required for cicd
 #-------------------------------------------------------------------
 buildDockerImage() {
@@ -23,8 +22,8 @@ buildDockerImage() {
 
   bld_cmd="DOCKER_BUILDKIT=1 docker build"
   bld_cmd+=" --build-arg BASE_IMAGE=$DKR_BASE_IMG"
-  # comment out to speed up
-  #bld_cmd+=" --no-cache"
+  # comment out to speed up the docker image build
+  bld_cmd+=" --no-cache"
   # uncomment to debug
   #bld_cmd+=" --progress=plain"
   bld_cmd+=" --platform $DKR_PLATFORM"
@@ -33,7 +32,7 @@ buildDockerImage() {
   run eval "${bld_cmd}"
 }
 
-is_file_exe(){
+is_file_exe() {
   if [[ -x $1 ]]; then
     info "$1 is executable"
   else
@@ -42,47 +41,52 @@ is_file_exe(){
   fi
 }
 # when running on a cicd pipeline we need to build a bit different, we need to
-# check the architecture of the runner
+# check the architecture of the host/runner
 #-------------------------------------------------------------------------------
 buildCiCd() {
 
-  # shellcheck source=/dev/null
-  . .env
+  is_pipeline=$(is_ci)
+  if [[ ${is_pipeline} = "yes" ]]; then
 
-  info "Running container for ci build"
+    # shellcheck source=/dev/null
+    . .env
 
-  repo_dir="$(jq -r '.git.name' "$cfg_file")"
-  # spin up a container of the builder docker image
-  pushd "${repo_dir}"
-   run ls -la > test-log
-   run grep -e config -e entrycmd.sh -e cicd-build.sh test-log
-   run is_file_exe entrycmd.sh
-   run is_file_exe cicd-build.sh
-   run rm test-log
+    info "Running container for ci build"
 
-   run_cmd="time docker run"
-   run_cmd+=" --rm"
-   run_cmd+=" --privileged"
-   run_cmd+=" --volume $(pwd):/tmp/workspace"
-   run_cmd+=" --env GIT_HASH=${ENV_GIT_HASH}"
-   run_cmd+=" --env HOST_UID=${ENV_USER_ID}"
-   run_cmd+=" --env HOST_GID=${ENV_USER_GID}"
-   run_cmd+=" ${DKR_IMAGE_NAME}:latest"
-   run_cmd+=" bash -c ./entrycmd.sh"
+    repo_dir="$(jq -r '.git.name' "$cfg_file")"
+    # spin up a container of the builder docker image
+    pushd "${repo_dir}"
+      run ls -la >test-log
+      run grep -e config -e entrycmd.sh -e cicd-build.sh test-log
+      run is_file_exe entrycmd.sh
+      run is_file_exe cicd-build.sh
+      run rm test-log
 
-   info "${run_cmd[@]}"
-   eval "${run_cmd}" &
-   wait "$!"
-  popd
+      run_cmd="time docker run"
+      run_cmd+=" --rm"
+      run_cmd+=" --privileged"
+      run_cmd+=" --volume $(pwd):/tmp/workspace"
+      run_cmd+=" --env GIT_HASH=${ENV_GIT_HASH}"
+      run_cmd+=" --env HOST_UID=${ENV_USER_ID}"
+      run_cmd+=" --env HOST_GID=${ENV_USER_GID}"
+      run_cmd+=" ${DKR_IMAGE_NAME}:latest"
+      run_cmd+=" bash -c ./entrycmd.sh"
 
-  run cp -r "${repo_dir}/deploy" ./
-  run ls -lah deploy
+      info "${run_cmd[@]}"
+      eval "${run_cmd}" &
+      wait "$!"
+    popd
 
-  # test that the runner can actually remove it
-  run rm -rf "${repo_dir}/deploy"
-  run rm -rf "${repo_dir}/work"
+    run cp -r "${repo_dir}/deploy" ./
+    run ls -lah deploy
 
-  echo "Done! Your image(s) should be in deploy/"
+    # test that the runner can actually remove it
+    run rm -rf "${repo_dir}/deploy"
+    run rm -rf "${repo_dir}/work"
+
+    echo "Done! Your image(s) should be in deploy/"
+
+  fi
 }
 
 buildLocal() {

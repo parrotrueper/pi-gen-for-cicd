@@ -1,12 +1,39 @@
 # can only be used with a self-hosted runner due to privileged mode
+clone:
+  depth: 1
+
 pipelines:
   default:
     - step:
-        name: Test runner
+        name: ARM runner
         runs-on:
+          - pi.shell.runner
+          - arm.linux.shell
+          - self.hosted
           - linux.shell
         script:
           - export DOCKER_HOST=""
           - ./ci/test
+          - tar -zcvf deploy.tar.gz deploy
+          - touch deploy.tar.gz
+          - chmod 644 deploy.tar.gz
+          - ls -lah
         artifacts:
-          - ./deploy
+          - deploy.tar.gz
+    - step:
+        services:
+          - docker
+        name: Upload Artefacts for main branch
+        size: 2x
+        script:
+          # knocking out for test on branch
+          - if [[ "$BITBUCKET_BRANCH" != "main" ]]; then exit 0; fi
+          - pipe: atlassian/bitbucket-upload-file:0.7.5
+            variables:
+              FILENAME: "deploy.tar.gz"
+              BITBUCKET_ACCESS_TOKEN: $PI_OS_TOKEN
+              DEBUG: 'true'
+definitions:
+  services:
+    docker:
+      memory: 3072

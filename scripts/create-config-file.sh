@@ -21,12 +21,12 @@ printf "# this script is sourced during the build process\n\n"
 #  The name of the image to build with the current stage directories. Use this
 #  variable to set the root name of your OS, eg IMG_NAME=Frobulator.
 #  Export files in stages may add suffixes to IMG_NAME.
-printf "export IMG_NAME=%s\n" "$(jq -r '.build.img_name' "$cfg_file")"
+printf "export IMG_NAME=\'%s\'\n" "$(jq -r '.build.img_name' "$cfg_file")"
 
 # PI_GEN_RELEASE (Default: Raspberry Pi reference)
 #  The release name to use in /etc/issue.txt. The default should only be used
 #  for official Raspberry Pi builds.
-printf "export PI_GEN_RELEASE=%s\n" "$(jq -r '.build.pi_gen_release' "$cfg_file")"
+printf "export PI_GEN_RELEASE=\'%s\'\n" "$(jq -r '.build.pi_gen_release' "$cfg_file")"
 
 # RELEASE (Default: bookworm)
 #  The release version to build images against. Valid values are any supported
@@ -34,7 +34,7 @@ printf "export PI_GEN_RELEASE=%s\n" "$(jq -r '.build.pi_gen_release' "$cfg_file"
 #  packages available, you'll need to either modify your stages accordingly, or
 #  checkout the appropriate branch. For example, if you'd like to build a
 #  bullseye image, you should do so from the bullseye branch.
-printf "export RELEASE=%s\n"  "$(jq -r '.build.release' "$cfg_file")"
+printf "export RELEASE=\'%s\'\n"  "$(jq -r '.build.release' "$cfg_file")"
 
 # APT_PROXY (Default: unset)
 #  If you require the use of an apt proxy, set it here.  This proxy setting
@@ -71,7 +71,7 @@ printf "export RELEASE=%s\n"  "$(jq -r '.build.release' "$cfg_file")"
 #  zip to deploy a zipped image (.zip).
 #  gz to deploy a gzipped image (.img.gz).
 #  xz to deploy a xzipped image (.img.xz).
-printf "export DEPLOY_COMPRESSION=%s\n" "$(jq -r '.build.deploy_compression' "$cfg_file")"
+#printf "export DEPLOY_COMPRESSION=%s\n" "$(jq -r '.build.deploy_compression' "$cfg_file")"
 
 
 # DEPLOY_ZIP (Deprecated)
@@ -84,7 +84,7 @@ printf "export DEPLOY_COMPRESSION=%s\n" "$(jq -r '.build.deploy_compression' "$c
 #  DEPLOY_COMPRESSION. From 0 to 9 (refer to the tool man page for more
 #  information on this. Usually 0 is no compression but very fast, up to 9 with
 #  the best compression but very slow ).
-printf "export COMPRESSION_LEVEL=%s\n" "$(jq -r '.build.compression_level' "$cfg_file")"
+#printf "export COMPRESSION_LEVEL=%s\n" "$(jq -r '.build.compression_level' "$cfg_file")"
 
 # USE_QEMU (Default: 0)
 #  Setting to '1' enables the QEMU mode - creating an image that can be mounted
@@ -172,6 +172,7 @@ printf "export ENABLE_SSH=%s\n"  "$(jq -r '.build.enable_ssh' "$cfg_file")"
 #  will run the contents of mystage before stage2. Note that quotes are needed
 #  around the list. An absolute or relative path can be given for stages outside
 #  the pi-gen directory.
+printf "export STAGE_LIST=\'%s\'\n"  "$(jq -r '.build.stage_list' "$cfg_file")"
 
 # EXPORT_CONFIG_DIR (Default: $BASE_DIR/export-image)
 #

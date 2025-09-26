@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+# Exit on error
+set -e
+
+# Error handling
+trap 'printf "\n\nERROR at line $LINENO. Exiting.\n\n"' ERR
+
+repo_root="$(git rev-parse --show-toplevel)"
+
+cd "$repo_root"
+
+docker pull orhunp/git-cliff
+docker run -t --volume "$(pwd)":/app/ orhunp/git-cliff:latest > CHANGELOG.md
+
+# Remove consecutive duplicate lines from CHANGELOG.md
+awk 'NR == 1 || $0 != prev { print } { prev = $0 }' CHANGELOG.md > CHANGELOG.tmp && mv CHANGELOG.tmp CHANGELOG.md

@@ -11,21 +11,44 @@ declare -i VERBOSITY=${VERBOSITY:-1}
 . ci/ansi
 
 run() {
-  ansi --yellow-intense --newline "[RUN] $*"
+  ansi --green-intense --newline "[RUN] $*"
   "$@"
 }
 
 err() {
-  ansi --bold --red --newline "[ERROR] $*"
+  ansi --bold --red --newline "[ERROR] Line: ${BASH_LINENO[0]}   $*"
+}
+
+fatal(){
+  err_code=$1
+  shift
+  ansi --bold --red --newline "[ERROR] Line: ${BASH_LINENO[0]}   $*"
+  exit "$err_code"
+
 }
 
 info() {
-  ansi --faint --newline "[INFO] $*"
+  ansi --cyan --newline "[INFO] $*"
 }
 
 pass() {
   ansi --bold --green --newline "[PASS] $*"
   echo
+}
+
+expect_fail() {
+  ansi --green-intense --newline "[RUN] $*"
+  set +e
+  ( "$@" )
+  RC=$?
+  set -e
+
+  if [ ${RC} -eq 0 ]; then
+    err "Expected command to fail, but it succeeded: $*"
+    exit 1
+  else
+    pass "Command failed as expected: $*"
+  fi
 }
 
 warn() {
@@ -77,6 +100,7 @@ check_top_dir() {
     err Please run these scripts from the root of the repo
     exit 1
   fi
+  echo "${git_dir}"
 }
 
 # Traps.

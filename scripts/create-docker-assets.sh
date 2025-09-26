@@ -28,10 +28,11 @@ esac
 
 info "generate .env for docker compose"
 {
-    printf "DKR_BASE_IMG=%s\n" "$(jq -r '.docker.base' "$cfg_file")"
+    printf "DKR_BASE_IMG=%s-slim\n" "$(jq -r '.docker.base' "$cfg_file")"
     printf "DKR_PLATFORM=%s\n" "$(jq -r '.docker.platform' "$cfg_file")"
     printf "DKR_IMAGE_NAME=%s\n" "$(jq -r '.docker.name' "$cfg_file")"
     printf "DKR_BLD_CONTEXT=%s\n" "$(jq -r '.docker.build_context' "$cfg_file")"
+    printf "DKR_BLD_CONTAINER_NAME=\"%s\"\n" "$(jq -r '.docker.container_name' "$cfg_file")"
 
     printf "ENV_USER_ID=%s\n" "$(id -u)"
     printf "ENV_USER_GID=%s\n" "$(id -g)"
